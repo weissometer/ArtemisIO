@@ -1,58 +1,63 @@
 #include <serial.h>
 
-#define buttonPin 2
-#define toggle2Pin 4
+#define toggle0Pin 2
+#define toggle1Pin 4
 
+int toggle0;
 int toggle1;
+int lasttoggle0 = LOW;
 int lasttoggle1 = LOW;
-int lasttoggle2 = LOW;
 
 long lastDebounceTime = 0;
 long debounceDelay = 50;
 
+char* myButtonPins[]={toggle0Pin,toggle1Pin};
+char* myButtons[] =  {toggle0,  toggle1};
+char* myLastState[] = {lasttoggle0, lasttoggle1};
+
+int numberofButtons= 2;
 void setup() {
   Serial.begin(9600);
 
   /* We are not using external pullup resistors so we use an onboard
    * pullup resistor to avoid any floating values
    * We could also accomplish this with the following lines of code
-   * pinMode(buttonPin, INPUT);
-   * digitalWrite(buttonPin, HIGH);
+   * pinMode(toggle0Pin, INPUT);
+   * digitalWrite(toggle0Pin, HIGH);
    */
-  pinMode(buttonPin, INPUT_PULLUP);
+  pinMode(toggle0Pin, INPUT_PULLUP);
+  pinMode(toggle1Pin, INPUT_PULLUP);
   
 }
 
 void loop() {
-  /* The following code avoids button bouncing.
-   * See: www.arduino.cc/en/Tutorial/Debounce for more details
-   */
-  int reading1 = digitalRead(buttonPin);
-  
-  int reading2 = digitalRead(toggle2Pin);
-  
-  if (reading1 != lasttoggle1) {
-    lastDebounceTime = millis(); 
-  }
-  
-  if ((millis() - lastDebounceTime) > debounceDelay) {
-    if (reading1 != toggle1) {
-      toggle1 = reading1;
 
-      // Only transmit the "toggle" command if the toggle1 is LOW
-      if (toggle1 == LOW) {
-        Serial.println("fire1");
-      }
-      
-      }
+  for( i=0; i<numberofButtons; i++){
+    pushTest(i);
+  }
+}
+
+void pushTest(int buttonNumber){ //a detector for each button, hopefully fast enough
+int localButton = myButtons[buttonNumber];
+
+int lastToggle = LOW;
+int reading = digitalRead(myButtonPins[buttonNumber]);
+
+if (reading != lastToggle){
+  lastDebounceTime= millis();
+}
+  
+  if (millis()-lastDebounceTime > debounceDelay){
+    if(reading != localButton){
+    localButton = reading;
+    
+    if(localButton == LOW){
+      String outputString = "fire"+ buttonNumber;
+      Serial.println(outputString);
     }
-    if(reading2 != toggle2){
-      toggle2 = reading1;
-      if (toggle2 == LOW){
-        Serial.println("fire2");
-      }
     }
   }
-  lasttoggle1 = reading1;
-  lasttoggle2 = reading2;
+  
+  myLastState[buttonNumber] = reading;
+
 }
